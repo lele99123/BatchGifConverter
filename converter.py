@@ -4,6 +4,7 @@ import ffmpeg
 from PIL import Image, ImageSequence
 from moviepy.editor import VideoFileClip
 import cv2
+import concurrent.futures
 
 class VideoToGifConverter:
     def __init__(self):
@@ -19,6 +20,29 @@ class VideoToGifConverter:
 
     def batch_add_videos(self, video_paths):
         self.videos.extend(video_paths)
+
+    def process_video(self, video):
+        try:
+            path = video["path"]
+            start_frame = video["start"]
+            end_frame = video["end"]
+            crop_area = video.get("crop")
+
+            if crop_area:
+                cropped_video = self.crop_video_frames(path, crop_area)
+            else:
+                cropped_video = path
+
+            cut_video = self.cut_video_segment(cropped_video, start_frame, end_frame)
+            self.convert_video_to_gif(cut_video, "unchanged")
+            return f"Processed {os.path.basename(path)}"
+        except Exception as e:
+            return f"Error processing {os.path.basename(path)}: {str(e)}"
+
+    def batch_process_videos(self, max_workers=None):
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            results = list(executor.map(self.process_video, self.videos))
+        return results
 
     def cut_video_segment(self, video_path, start_frame, end_frame):
         output_path = os.path.join(self.temp_dir, f"{os.path.splitext(os.path.basename(video_path))[0]}_cut.mp4")
