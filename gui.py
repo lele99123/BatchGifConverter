@@ -9,7 +9,13 @@ import subprocess
 class VideoToGifConverterGUI:
     def __init__(self, master):
         self.master = master
-        self.master.title("Video to GIF Converter")
+        master.title("Video to GIF Converter")
+        master.geometry("800x600")  # Increased initial window size
+        master.configure(bg="#f0f0f0")
+
+        self.style = ttk.Style()
+        self.style.theme_use("clam")
+
         self.converter = VideoToGifConverter()
         self.videos = []
         self.current_video = None
@@ -17,8 +23,8 @@ class VideoToGifConverterGUI:
         self.fps = None
         self.preview_mode = "start"
 
-        self.preview_width = 640
-        self.preview_height = 480
+        self.preview_width = 480  # Increased preview size
+        self.preview_height = 360
         self.crop_rect = None
         self.crop_start = None
         self.dragging = None
@@ -28,12 +34,20 @@ class VideoToGifConverterGUI:
 
     def create_widgets(self):
         # Create main frames
-        left_frame = tk.Frame(self.master)
+        main_frame = ttk.Frame(self.master)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        left_frame = ttk.Frame(main_frame)
         left_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
-        right_frame = tk.Frame(self.master)
+        right_frame = ttk.Frame(main_frame)
         right_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
-        bottom_frame = tk.Frame(self.master)
+        bottom_frame = ttk.Frame(main_frame)
         bottom_frame.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
+
+        main_frame.columnconfigure(0, weight=1)
+        main_frame.columnconfigure(1, weight=1)
+        main_frame.rowconfigure(0, weight=1)
+        main_frame.rowconfigure(1, weight=0)
 
         # Left frame widgets (Video selection, cutting, etc.)
         self.create_left_frame_widgets(left_frame)
@@ -45,31 +59,31 @@ class VideoToGifConverterGUI:
         self.create_bottom_frame_widgets(bottom_frame)
 
     def create_left_frame_widgets(self, frame):
-        tk.Label(frame, text="Input Videos:").pack(anchor="w")
+        ttk.Label(frame, text="Input Videos:").pack(anchor="w")
         self.video_listbox = tk.Listbox(frame, width=50, height=10)
         self.video_listbox.pack(fill=tk.BOTH, expand=True)
         self.video_listbox.bind('<<ListboxSelect>>', self.on_video_select)
         
-        button_frame = tk.Frame(frame)
+        button_frame = ttk.Frame(frame)
         button_frame.pack(fill=tk.X, pady=5)
-        tk.Button(button_frame, text="Add Videos", command=self.add_videos).pack(side=tk.LEFT, padx=5)
-        tk.Button(button_frame, text="Remove Selected", command=self.remove_video).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Add Videos", command=self.add_videos).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Remove Selected", command=self.remove_video).pack(side=tk.LEFT, padx=5)
 
-        tk.Label(frame, text="Start Frame:").pack(anchor="w")
-        self.start_frame = tk.Scale(frame, from_=0, to=100, orient=tk.HORIZONTAL, command=lambda x: self.update_preview("start"))
+        ttk.Label(frame, text="Start Frame:").pack(anchor="w")
+        self.start_frame = ttk.Scale(frame, from_=0, to=100, orient=tk.HORIZONTAL, command=lambda x: self.update_preview("start"))
         self.start_frame.pack(fill=tk.X)
 
-        tk.Label(frame, text="End Frame:").pack(anchor="w")
-        self.end_frame = tk.Scale(frame, from_=0, to=100, orient=tk.HORIZONTAL, command=lambda x: self.update_preview("end"))
+        ttk.Label(frame, text="End Frame:").pack(anchor="w")
+        self.end_frame = ttk.Scale(frame, from_=0, to=100, orient=tk.HORIZONTAL, command=lambda x: self.update_preview("end"))
         self.end_frame.pack(fill=tk.X)
 
-        preview_button_frame = tk.Frame(frame)
+        preview_button_frame = ttk.Frame(frame)
         preview_button_frame.pack(fill=tk.X, pady=5)
-        tk.Button(preview_button_frame, text="Preview Start", command=lambda: self.update_preview("start")).pack(side=tk.LEFT, padx=5)
-        tk.Button(preview_button_frame, text="Preview End", command=lambda: self.update_preview("end")).pack(side=tk.LEFT, padx=5)
+        ttk.Button(preview_button_frame, text="Preview Start", command=lambda: self.update_preview("start")).pack(side=tk.LEFT, padx=5)
+        ttk.Button(preview_button_frame, text="Preview End", command=lambda: self.update_preview("end")).pack(side=tk.LEFT, padx=5)
 
     def create_right_frame_widgets(self, frame):
-        self.preview_frame = tk.Frame(frame, width=self.preview_width, height=self.preview_height)
+        self.preview_frame = ttk.Frame(frame, width=self.preview_width, height=self.preview_height)
         self.preview_frame.pack(fill=tk.BOTH, expand=True)
         self.preview_canvas = tk.Canvas(self.preview_frame, width=self.preview_width, height=self.preview_height)
         self.preview_canvas.pack(fill=tk.BOTH, expand=True)
@@ -77,22 +91,22 @@ class VideoToGifConverterGUI:
         self.preview_canvas.bind("<B1-Motion>", self.draw_crop)
         self.preview_canvas.bind("<ButtonRelease-1>", self.end_crop)
 
-        tk.Label(frame, text="Crop (Left Top Right Bottom):").pack(anchor="w")
-        self.crop = tk.Entry(frame)
+        ttk.Label(frame, text="Crop (Left Top Right Bottom):").pack(anchor="w")
+        self.crop = ttk.Entry(frame)
         self.crop.pack(fill=tk.X)
 
     def create_bottom_frame_widgets(self, frame):
         # Output directory
-        output_frame = tk.Frame(frame)
+        output_frame = ttk.Frame(frame)
         output_frame.pack(fill=tk.X, pady=5)
-        tk.Label(output_frame, text="Output Directory:").pack(side=tk.LEFT)
-        self.output_dir = tk.Entry(output_frame, width=40)
+        ttk.Label(output_frame, text="Output Directory:").pack(side=tk.LEFT)
+        self.output_dir = ttk.Entry(output_frame, width=40)
         self.output_dir.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=5)
         self.output_dir.insert(0, "output_directory")
-        tk.Button(output_frame, text="Browse", command=self.browse_output).pack(side=tk.LEFT)
+        ttk.Button(output_frame, text="Browse", command=self.browse_output).pack(side=tk.LEFT)
 
         # Convert button
-        tk.Button(frame, text="Convert", command=self.convert).pack(pady=10)
+        ttk.Button(frame, text="Convert", command=self.convert).pack(pady=10)
 
     def start_crop(self, event):
         x, y = event.x, event.y
@@ -124,26 +138,41 @@ class VideoToGifConverterGUI:
     def draw_crop(self, event):
         if self.dragging == "new":
             self.preview_canvas.delete("crop")
-            self.crop_rect = (*self.crop_start, event.x, event.y)
+            x, y = self.constrain_point(event.x, event.y)
+            self.crop_rect = (*self.constrain_point(*self.crop_start), x, y)
             self.preview_canvas.create_rectangle(*self.crop_rect, outline="red", tags="crop")
         elif self.dragging:
             x1, y1, x2, y2 = self.crop_rect
+            x, y = self.constrain_point(event.x, event.y)
             if self.dragging in ["topleft", "left", "bottomleft"]:
-                x1 = event.x
+                x1 = x
             if self.dragging in ["topright", "right", "bottomright"]:
-                x2 = event.x
+                x2 = x
             if self.dragging in ["topleft", "top", "topright"]:
-                y1 = event.y
+                y1 = y
             if self.dragging in ["bottomleft", "bottom", "bottomright"]:
-                y2 = event.y
-            self.crop_rect = (x1, y1, x2, y2)
+                y2 = y
+            self.crop_rect = self.constrain_rect(x1, y1, x2, y2)
             self.preview_canvas.delete("crop")
             self.preview_canvas.create_rectangle(*self.crop_rect, outline="red", tags="crop")
 
         self.crop_start = (event.x, event.y)  # Update crop_start for continuous dragging
 
+    def constrain_point(self, x, y):
+        x = max(0, min(x, self.preview_width))
+        y = max(0, min(y, self.preview_height))
+        return x, y
+
+    def constrain_rect(self, x1, y1, x2, y2):
+        x1 = max(0, min(x1, self.preview_width))
+        y1 = max(0, min(y1, self.preview_height))
+        x2 = max(0, min(x2, self.preview_width))
+        y2 = max(0, min(y2, self.preview_height))
+        return (x1, y1, x2, y2)
+
     def end_crop(self, event):
         if self.crop_rect:
+            self.crop_rect = self.constrain_rect(*self.crop_rect)
             x1, y1, x2, y2 = self.crop_rect
             if x1 > x2:
                 x1, x2 = x2, x1
@@ -161,10 +190,10 @@ class VideoToGifConverterGUI:
             video_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             video_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             x1, y1, x2, y2 = self.crop_rect
-            x1 = max(0, int(x1 * video_width / self.preview_width))
-            y1 = max(0, int(y1 * video_height / self.preview_height))
-            x2 = min(video_width, int(x2 * video_width / self.preview_width))
-            y2 = min(video_height, int(y2 * video_height / self.preview_height))
+            x1 = int(x1 * video_width / self.preview_width)
+            y1 = int(y1 * video_height / self.preview_height)
+            x2 = int(x2 * video_width / self.preview_width)
+            y2 = int(y2 * video_height / self.preview_height)
             
             crop_values = (x1, y1, x2 - x1, y2 - y1)  # left, top, width, height
             self.videos[self.current_video]["crop"] = crop_values
@@ -187,6 +216,7 @@ class VideoToGifConverterGUI:
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 frame = cv2.resize(frame, (self.preview_width, self.preview_height))
                 photo = ImageTk.PhotoImage(image=Image.fromarray(frame))
+                self.preview_canvas.config(width=self.preview_width, height=self.preview_height)
                 self.preview_canvas.create_image(0, 0, image=photo, anchor=tk.NW)
                 self.preview_canvas.image = photo
 
